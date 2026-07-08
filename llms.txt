@@ -1,0 +1,101 @@
+# rasuvaeff/yii3-clickhouse-toolkit
+
+Yii3 config bridge for `rasuvaeff/clickhouse-toolkit`. Ships only
+`config/di.php` + `config/params.php` and one factory class. Installing it wires
+a ClickHouse client, migration runner and three console commands into a Yii3
+container from `CLICKHOUSE_*` environment variables.
+
+Namespace: `Rasuvaeff\Yii3ClickHouseToolkit`.
+
+## Install
+
+```bash
+composer require rasuvaeff/yii3-clickhouse-toolkit
+```
+
+Requires PHP 8.3–8.5, `rasuvaeff/clickhouse-toolkit ^1.1`, a Yii3 app on
+`yiisoft/config` (standard `RecursiveMerge::groups('params', …)`), and a PSR-18
+client + PSR-17 factories (e.g. guzzle).
+
+## Rules
+
+- This bridge is the ONLY package that should bind `ClickHouseConfig`,
+  `ClickHouseClientFactory`, `PsrClickHouseClient` and the migration services.
+  Backend packages (e.g. `yii3-outbox-clickhouse`) consume the factory, never bind it.
+- `migrationsPath` has NO default. Resolving the migration runner/generator
+  without it throws `RuntimeException`. Set `CLICKHOUSE_MIGRATIONS_PATH` or the param.
+- Query/identifier safety belongs to `rasuvaeff/clickhouse-toolkit`, not here.
+- All actual ClickHouse behaviour is documented in the toolkit's own `llms.txt`.
+
+## Container ids wired by config/di.php
+
+- `Rasuvaeff\ClickHouseToolkit\ClickHouseConfig` — from params.
+- `Rasuvaeff\ClickHouseToolkit\ClickHouseClientFactory` — injects app-bound
+  `Psr\Http\Client\ClientInterface` + PSR-17 factories when present, else discovery.
+- `SimPod\ClickHouseClient\Client\PsrClickHouseClient` — `factory->create()`.
+- `SimPod\ClickHouseClient\Client\ClickHouseClient` — alias → `PsrClickHouseClient`.
+- `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner` (+ `...RunnerInterface` alias).
+- `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator`.
+
+## Console commands (params key `yiisoft/yii-console.commands`)
+
+- `clickhouse:migrations:generate <description>`
+- `clickhouse:migrations:status`
+- `clickhouse:migrations:migrate`
+
+## Params: `rasuvaeff/yii3-clickhouse-toolkit`
+
+| key | env | default |
+|---|---|---|
+| host | CLICKHOUSE_HOST | 127.0.0.1 |
+| port | CLICKHOUSE_PORT | 8123 |
+| database | CLICKHOUSE_DB | default |
+| username | CLICKHOUSE_USER | default |
+| password | CLICKHOUSE_PASSWORD | '' |
+| secure | CLICKHOUSE_SECURE | false (1/true/on/yes → true) |
+| migrationsPath | CLICKHOUSE_MIGRATIONS_PATH | unset (required for migrations) |
+
+Override in the app:
+
+```php
+return [
+    'rasuvaeff/yii3-clickhouse-toolkit' => [
+        'migrationsPath' => dirname(__DIR__, 2) . '/resources/clickhouse-migrations',
+    ],
+];
+```
+
+## Public API
+
+### `ClickHouseConfigFactory`
+
+`@api final readonly class`. Builds a `ClickHouseConfig` from the params array,
+coercing environment strings (`port` → int, `secure` → bool understanding
+`1/true/on/yes`, case-insensitive, whitespace-trimmed).
+
+```php
+use Rasuvaeff\Yii3ClickHouseToolkit\ClickHouseConfigFactory;
+
+$config = (new ClickHouseConfigFactory())->fromParams([
+    'host' => 'clickhouse.internal',
+    'port' => '8443',
+    'secure' => 'true',
+]);
+// $config instanceof Rasuvaeff\ClickHouseToolkit\ClickHouseConfig
+```
+
+## Consuming the client
+
+```php
+use SimPod\ClickHouseClient\Client\ClickHouseClient;
+
+final readonly class ReportService
+{
+    public function __construct(private ClickHouseClient $client) {}
+}
+```
+
+## Custom PSR-18 client
+
+Bind `Psr\Http\Client\ClientInterface` in the app DI; the bridge injects it into
+the factory automatically.
