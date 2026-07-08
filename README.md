@@ -22,7 +22,7 @@ in a Yii3 application.
 ## Requirements
 
 - PHP 8.3–8.5
-- [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.1` (pulled in automatically)
+- [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.2` (pulled in automatically; migration commands need ≥ 1.2.0)
 - A Yii3 application using [`yiisoft/config`](https://github.com/yiisoft/config)
   with the standard `RecursiveMerge::groups('params', …)` setup (the app template default)
 - A PSR-18 HTTP client + PSR-17 factories (e.g. `guzzlehttp/guzzle`)

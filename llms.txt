@@ -13,7 +13,7 @@ Namespace: `Rasuvaeff\Yii3ClickHouseToolkit`.
 composer require rasuvaeff/yii3-clickhouse-toolkit
 ```
 
-Requires PHP 8.3–8.5, `rasuvaeff/clickhouse-toolkit ^1.1`, a Yii3 app on
+Requires PHP 8.3–8.5, `rasuvaeff/clickhouse-toolkit ^1.2`, a Yii3 app on
 `yiisoft/config` (standard `RecursiveMerge::groups('params', …)`), and a PSR-18
 client + PSR-17 factories (e.g. guzzle).
 

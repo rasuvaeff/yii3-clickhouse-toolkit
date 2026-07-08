@@ -28,7 +28,7 @@
         "psr/container": "^1.0 || ^2.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
-        "rasuvaeff/clickhouse-toolkit": "^1.1",
+        "rasuvaeff/clickhouse-toolkit": "^1.2",
         "simpod/clickhouse-client": "^0.8.3"
     },
     "require-dev": {
