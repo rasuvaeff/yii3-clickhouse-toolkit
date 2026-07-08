@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Psr\Container\ContainerInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -15,6 +14,7 @@ use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface;
 use Rasuvaeff\Yii3ClickHouseToolkit\ClickHouseConfigFactory;
 use SimPod\ClickHouseClient\Client\ClickHouseClient;
 use SimPod\ClickHouseClient\Client\PsrClickHouseClient;
+use Yiisoft\Definitions\Reference;
 
 /** @var array $params */
 
@@ -38,16 +38,15 @@ $migrationsPath = static function () use ($config): string {
 return [
     ClickHouseConfig::class => static fn (): ClickHouseConfig => (new ClickHouseConfigFactory())->fromParams($config),
 
-    ClickHouseClientFactory::class => static fn (
-        ClickHouseConfig $clickHouseConfig,
-        ContainerInterface $container,
-    ): ClickHouseClientFactory => new ClickHouseClientFactory(
-        config: $clickHouseConfig,
-        httpClient: $container->has(ClientInterface::class) ? $container->get(ClientInterface::class) : null,
-        requestFactory: $container->has(RequestFactoryInterface::class) ? $container->get(RequestFactoryInterface::class) : null,
-        streamFactory: $container->has(StreamFactoryInterface::class) ? $container->get(StreamFactoryInterface::class) : null,
-        uriFactory: $container->has(UriFactoryInterface::class) ? $container->get(UriFactoryInterface::class) : null,
-    ),
+    ClickHouseClientFactory::class => [
+        '__construct()' => [
+            'config' => Reference::to(ClickHouseConfig::class),
+            'httpClient' => Reference::optional(ClientInterface::class),
+            'requestFactory' => Reference::optional(RequestFactoryInterface::class),
+            'streamFactory' => Reference::optional(StreamFactoryInterface::class),
+            'uriFactory' => Reference::optional(UriFactoryInterface::class),
+        ],
+    ],
 
     PsrClickHouseClient::class => static fn (ClickHouseClientFactory $factory): PsrClickHouseClient => $factory->create(),
     ClickHouseClient::class => PsrClickHouseClient::class,
