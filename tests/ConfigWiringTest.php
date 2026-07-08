@@ -13,6 +13,8 @@ use Rasuvaeff\ClickHouseToolkit\ClickHouseConfig;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface;
+use Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder;
+use Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsGenerateCommand;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsRunCommand;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsStatusCommand;
@@ -110,6 +112,22 @@ final class ConfigWiringTest
         Assert::instanceOf(
             $container->get(ClickHouseMigrationGenerator::class),
             ClickHouseMigrationGenerator::class,
+        );
+    }
+
+    public function bindsTableOperationHelpers(): void
+    {
+        // MutationBuilder and PartitionManager are client-only helpers, so the
+        // bridge wires them as singletons over the same live client.
+        $container = $this->container();
+
+        Assert::instanceOf(
+            $container->get(ClickHouseMutationBuilder::class),
+            ClickHouseMutationBuilder::class,
+        );
+        Assert::instanceOf(
+            $container->get(ClickHousePartitionManager::class),
+            ClickHousePartitionManager::class,
         );
     }
 

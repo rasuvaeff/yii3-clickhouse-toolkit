@@ -48,6 +48,8 @@ Once installed, the following container entries resolve from the merged config:
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner` | migration runner | needs `migrationsPath` (see below) |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface` | alias → runner | |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator` | migration generator | needs `migrationsPath` |
+| `Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder` | mutation builder | `ALTER … UPDATE/DELETE`, over the live client |
+| `Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager` | partition manager | drop/attach/freeze/move partitions, over the live client |
 
 Three console commands are registered under `yiisoft/yii-console`:
 

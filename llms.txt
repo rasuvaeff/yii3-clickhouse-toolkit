@@ -36,6 +36,8 @@ client + PSR-17 factories (e.g. guzzle).
 - `SimPod\ClickHouseClient\Client\ClickHouseClient` — alias → `PsrClickHouseClient`.
 - `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner` (+ `...RunnerInterface` alias).
 - `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator`.
+- `Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder` — client-only singleton (`ALTER … UPDATE/DELETE`).
+- `Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager` — client-only singleton (partition ops).
 
 ## Console commands (params key `yiisoft/yii-console.commands`)
 

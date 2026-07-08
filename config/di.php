@@ -11,6 +11,8 @@ use Rasuvaeff\ClickHouseToolkit\ClickHouseConfig;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface;
+use Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder;
+use Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager;
 use Rasuvaeff\Yii3ClickHouseToolkit\ClickHouseConfigFactory;
 use SimPod\ClickHouseClient\Client\ClickHouseClient;
 use SimPod\ClickHouseClient\Client\PsrClickHouseClient;
@@ -59,5 +61,13 @@ return [
 
     ClickHouseMigrationGenerator::class => static fn (): ClickHouseMigrationGenerator => new ClickHouseMigrationGenerator(
         $migrationsPath(),
+    ),
+
+    ClickHouseMutationBuilder::class => static fn (ClickHouseClient $client): ClickHouseMutationBuilder => new ClickHouseMutationBuilder(
+        client: $client,
+    ),
+
+    ClickHousePartitionManager::class => static fn (ClickHouseClient $client): ClickHousePartitionManager => new ClickHousePartitionManager(
+        client: $client,
     ),
 ];

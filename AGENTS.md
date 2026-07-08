@@ -9,8 +9,9 @@ A Yii3 **config bridge** for `rasuvaeff/clickhouse-toolkit` (namespace
 `config/params.php` and a single factory class, `ClickHouseConfigFactory`.
 Installing the package wires the toolkit's `ClickHouseConfig`,
 `ClickHouseClientFactory`, `PsrClickHouseClient` (+ `ClickHouseClient` alias),
-migration runner/generator and three migration console commands into a Yii3
-container straight from `CLICKHOUSE_*` environment variables.
+migration runner/generator, the client-only `ClickHouseMutationBuilder` /
+`ClickHousePartitionManager` helpers and three migration console commands into a
+Yii3 container straight from `CLICKHOUSE_*` environment variables.
 
 Public API: `ClickHouseConfigFactory`. Everything else the package exposes is
 DI configuration, not code.
@@ -22,7 +23,8 @@ DI configuration, not code.
 2. **No suppressions.** No `@psalm-suppress`, no baseline. Fix the root cause.
 3. **This bridge is the single binder of the toolkit client/config.** `config/di.php`
    is the ONLY place `ClickHouseConfig`, `ClickHouseClientFactory`,
-   `PsrClickHouseClient`/`ClickHouseClient` and the migration services get bound.
+   `PsrClickHouseClient`/`ClickHouseClient`, the migration services and the
+   `ClickHouseMutationBuilder`/`ClickHousePartitionManager` helpers get bound.
    Backend packages (e.g. `yii3-outbox-clickhouse`) consume the factory and must
    never bind it — two binders of one key is a `yiisoft/config` `Duplicate key`
    error. When you touch `config/`, re-run the merge harness (below) against
