@@ -6,6 +6,7 @@
 [![Static analysis](https://github.com/rasuvaeff/yii3-clickhouse-toolkit/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/rasuvaeff/yii3-clickhouse-toolkit/actions)
 [![Psalm Level](https://shepherd.dev/github/rasuvaeff/yii3-clickhouse-toolkit/level.svg)](https://shepherd.dev/github/rasuvaeff/yii3-clickhouse-toolkit)
 [![License](https://poser.pugx.org/rasuvaeff/yii3-clickhouse-toolkit/license)](https://packagist.org/packages/rasuvaeff/yii3-clickhouse-toolkit)
+[Русская версия](README.ru.md)
 
 Yii3 config bridge for [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit).
 Install it and a ClickHouse client, migration runner and the three migration
