@@ -37,6 +37,25 @@ $migrationsPath = static function () use ($config): string {
     return $path;
 };
 
+$migrationPlaceholders = static function () use ($config): array {
+    $placeholders = $config['migrationPlaceholders'] ?? [];
+
+    if (!is_array($placeholders)) {
+        return [];
+    }
+
+    $resolved = [];
+
+    /** @var mixed $value */
+    foreach ($placeholders as $key => $value) {
+        if (is_string($key) && (is_string($value) || is_int($value))) {
+            $resolved[$key] = (string) $value;
+        }
+    }
+
+    return $resolved;
+};
+
 return [
     ClickHouseConfig::class => static fn (): ClickHouseConfig => (new ClickHouseConfigFactory())->fromParams($config),
 
@@ -56,6 +75,7 @@ return [
     ClickHouseMigrationRunner::class => static fn (ClickHouseClient $client): ClickHouseMigrationRunner => new ClickHouseMigrationRunner(
         client: $client,
         migrationsPath: $migrationsPath(),
+        placeholders: $migrationPlaceholders(),
     ),
     ClickHouseMigrationRunnerInterface::class => ClickHouseMigrationRunner::class,
 

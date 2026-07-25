@@ -75,6 +75,7 @@ composer require rasuvaeff/yii3-clickhouse-toolkit
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (принимает `1/true/on/yes`) |
 | `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — требуется для миграций* |
+| `migrationPlaceholders` | — | `[]` |
 
 У `migrationsPath` **нет безопасного дефолта**: резолв migration runner'а или
 generator'а без него бросает явное `RuntimeException`, а не молча работает
@@ -89,6 +90,29 @@ return [
     ],
 ];
 ```
+
+### Плейсхолдеры миграций
+
+`migrationPlaceholders` передаётся раннеру как подстановки `{{key}}`,
+применяемые к каждому файлу миграции **до** вычисления контрольной суммы и
+выполнения. Так пакет может поставлять DDL, имя таблицы в котором настраивает
+приложение, а не хардкодит сам пакет:
+
+```php
+// config/common/params.php
+'rasuvaeff/yii3-clickhouse-toolkit' => [
+    'migrationPlaceholders' => [
+        'exposures_table' => 'ab_exposures',
+    ],
+],
+```
+
+Нестроковые ключи и нескалярные значения отбрасываются, не доходя до
+`str_replace()`. Неразрешённый `{{…}}` заставляет раннер бросить исключение с
+именем файла и токена — опечатка не уезжает в ClickHouse. Изменение значения
+после применения миграции сообщается как расхождение; что с этим делать —
+в README пакета `rasuvaeff/clickhouse-toolkit`.
+
 
 ## Использование
 
