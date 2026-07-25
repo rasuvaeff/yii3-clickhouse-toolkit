@@ -115,6 +115,38 @@ final class ConfigWiringTest
         );
     }
 
+    public function migrationPlaceholdersReachTheRunner(): void
+    {
+        // this is the path that lets a package ship DDL with {{table}} tokens:
+        // params → di → runner. Without it the tokens reach ClickHouse verbatim.
+        $container = $this->container([
+            'migrationsPath' => __DIR__,
+            'migrationPlaceholders' => ['exposures_table' => 'custom_exposures', 'ttl' => 30],
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+        $placeholders = (new ReflectionProperty(ClickHouseMigrationRunner::class, 'placeholders'))->getValue($runner);
+
+        Assert::same($placeholders, ['exposures_table' => 'custom_exposures', 'ttl' => '30']);
+    }
+
+    public function malformedMigrationPlaceholdersAreDropped(): void
+    {
+        // params come from an application's config file: a non-string key or a
+        // nested array must not reach str_replace()
+        $container = $this->container([
+            'migrationsPath' => __DIR__,
+            'migrationPlaceholders' => ['ok' => 'value', 'bad' => ['nested'], 7 => 'numeric key'],
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'placeholders'))->getValue($runner),
+            ['ok' => 'value'],
+        );
+    }
+
     public function bindsTableOperationHelpers(): void
     {
         // MutationBuilder and PartitionManager are client-only helpers, so the

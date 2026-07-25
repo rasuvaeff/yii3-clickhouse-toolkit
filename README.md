@@ -74,6 +74,7 @@ Defaults come from environment variables. Override any of them by redefining the
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (accepts `1/true/on/yes`) |
 | `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — required for migrations* |
+| `migrationPlaceholders` | — | `[]` |
 
 `migrationsPath` has **no safe default**: resolving the migration runner or
 generator without it throws a clear `RuntimeException` rather than silently
@@ -88,6 +89,29 @@ return [
     ],
 ];
 ```
+
+### Migration placeholders
+
+`migrationPlaceholders` is passed to the runner as `{{key}}` substitutions,
+applied to every migration file **before** it is hashed and executed. That is
+how a package can ship DDL whose table name the application configures instead
+of hard-coding it:
+
+```php
+// config/common/params.php
+'rasuvaeff/yii3-clickhouse-toolkit' => [
+    'migrationPlaceholders' => [
+        'exposures_table' => 'ab_exposures',
+    ],
+],
+```
+
+Non-string keys and non-scalar values are dropped rather than reaching
+`str_replace()`. An unresolved `{{…}}` makes the runner throw, naming the file
+and the token — a typo does not travel to ClickHouse. Changing a value after a
+migration has been applied is reported as a divergence; see the
+`rasuvaeff/clickhouse-toolkit` README for what to do then.
+
 
 ## Usage
 

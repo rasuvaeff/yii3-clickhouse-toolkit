@@ -22,5 +22,9 @@ return [
         'password' => getenv('CLICKHOUSE_PASSWORD') ?: '',
         'secure' => filter_var(getenv('CLICKHOUSE_SECURE') ?: 'false', FILTER_VALIDATE_BOOLEAN),
         'migrationsPath' => getenv('CLICKHOUSE_MIGRATIONS_PATH') ?: '',
+        // `{{key}}` tokens replaced in every migration file before it is hashed
+        // and executed — how a package's shipped DDL learns the table name the
+        // application configured
+        'migrationPlaceholders' => [],
     ],
 ];
