@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- New `migrationsNamespace` param: the migrations directory can be given as a
+  PSR-4 namespace, resolved through `vendor/composer/autoload_psr4.php` the way
+  `yiisoft/db-migration` resolves its own. A path had to come either from an
+  environment variable — different on every stand, undiagnosable when mistyped —
+  or from `dirname()` arithmetic against the config file's own location, which
+  breaks when the config moves; a namespace is a property of the code and is
+  identical everywhere. An explicit `migrationsPath` still wins, so existing
+  configurations are unaffected, and a namespace that resolves to nothing throws
+  naming the namespace and every path checked. Params-only by design: reading it
+  from the environment would put the directory back into per-stand configuration
+  (#11).
+
 ## 1.2.0 — 2026-09-10
 
 - New `migrationsTable` param (`CLICKHOUSE_MIGRATIONS_TABLE`, default

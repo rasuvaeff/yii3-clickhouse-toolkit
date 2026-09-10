@@ -28,6 +28,14 @@ return [
         'password' => $env->read('CLICKHOUSE_PASSWORD'),
         'secure' => filter_var($env->read('CLICKHOUSE_SECURE', 'false'), FILTER_VALIDATE_BOOLEAN),
         'migrationsPath' => $env->read('CLICKHOUSE_MIGRATIONS_PATH'),
+        // PSR-4 namespace of the migrations directory, resolved through
+        // Composer's map when 'migrationsPath' is empty. Deliberately not read
+        // from the environment, unlike every key above it: the namespace is a
+        // property of the code, identical on every stand, and the point of the
+        // parameter is to stop the directory from being a per-stand `.env` line
+        // that no local run can validate. Example:
+        // 'migrationsNamespace' => 'App\\Infrastructure\\ClickHouse\\Migration'.
+        'migrationsNamespace' => '',
         // Bookkeeping table the runner records applied migrations in. A name
         // other than the default is what lets the package be adopted alongside
         // an existing `_migrations` of a different schema, and what keeps two

@@ -73,7 +73,8 @@ Defaults come from environment variables. Override any of them by redefining the
 | `username` | `CLICKHOUSE_USER` | `default` |
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (accepts `1/true/on/yes`) |
-| `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — required for migrations* |
+| `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — required for migrations, unless `migrationsNamespace` is set* |
+| `migrationsNamespace` | — | *unset — PSR-4 namespace resolved to the migrations directory* |
 | `migrationsTable` | `CLICKHOUSE_MIGRATIONS_TABLE` | `_migrations` |
 | `migrationPlaceholders` | — | `[]` |
 
@@ -109,6 +110,41 @@ return [
     ],
 ];
 ```
+
+### Locating migrations by namespace
+
+`migrationsNamespace` is the alternative to spelling the path out. It is
+resolved through Composer's PSR-4 map (`vendor/composer/autoload_psr4.php`),
+the way `yiisoft/db-migration` resolves its own migration namespaces:
+
+```php
+// config/common/params.php
+return [
+    'rasuvaeff/yii3-clickhouse-toolkit' => [
+        'migrationsNamespace' => 'App\\Infrastructure\\ClickHouse\\Migration',
+    ],
+];
+```
+
+The namespace is fictitious as far as PHP is concerned — `*.sql` files hold no
+classes — but the directory lives inside the application's PSR-4 tree, so
+Composer's map is the right thing to ask. The two ways it beats a path:
+
+- it is a property of the code, identical on every environment, so it is not a
+  per-stand `.env` line that no local run can validate;
+- it does not move when the config file does, unlike `dirname(__DIR__, 2)`.
+
+| Rule | Detail |
+|---|---|
+| Precedence | An explicit non-empty `migrationsPath` wins. Applications already configured that way are unaffected, and a migrations directory outside the PSR-4 tree stays reachable. |
+| Neither set | Unchanged: a `RuntimeException` naming both ways out. |
+| Unresolvable namespace | A `RuntimeException` naming the namespace **and every path checked** — the diagnosis the path variant cannot give. |
+| Longest prefix wins | A nested prefix (`App\Billing\`) may map elsewhere than its parent; the longest match owns the namespace, and a shorter one is tried only if the longer maps to nothing on disk. |
+| Renamed vendor directory | Composer's map is looked up as `vendor/composer/autoload_psr4.php` above this package. An application that renamed the vendor directory configures `migrationsPath` instead. |
+
+Both consumers — `ClickHouseMigrationRunner` and `ClickHouseMigrationGenerator` —
+build their path from the same DI closure, so the namespace is resolved in one
+place and reaches both.
 
 ### Migration bookkeeping table
 

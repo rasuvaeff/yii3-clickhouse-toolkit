@@ -66,6 +66,13 @@ Or with Make: `make build`, `make cs-fix`, `make psalm`, `make test`,
   closures call a resolver that raises a `RuntimeException` naming
   `CLICKHOUSE_MIGRATIONS_PATH` instead of shipping an empty-string default that
   would operate relative to the working directory. Do not "fix" it with a default.
+- **`migrationsNamespace` is params-only, deliberately.** Every other key reads
+  the environment through `EnvironmentReader`; this one must not. The namespace
+  is a property of the code, identical everywhere, and the whole point of the
+  parameter is to take the migrations directory out of per-stand `.env` files
+  that no local run can validate. `MigrationsDirectoryResolver` resolves it
+  through `vendor/composer/autoload_psr4.php`; an explicit `migrationsPath`
+  still wins, and an unresolvable namespace throws naming every path checked.
 - **PSR-18 injection is explicit.** `ClickHouseClientFactory` is bound with a
   closure that reads `Psr\Http\Client\ClientInterface` and the PSR-17 factories
   from the container via `has()`/`get()`, honouring an app-configured client
