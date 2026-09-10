@@ -56,6 +56,12 @@ Or with Make: `make build`, `make cs-fix`, `make psalm`, `make test`,
   through a real `Yiisoft\Di\Container`. A regression in the wiring will pass cs
   and psalm — only the wiring test catches it. Keep it green and extend it when
   you add a binding.
+- **Environment is read through `EnvironmentReader`, never bare `getenv()`.**
+  `Dotenv::createImmutable()` writes to `$_ENV`/`$_SERVER` and deliberately skips
+  `putenv()`, so `getenv()` alone silently falls back to the defaults on any
+  `.env`-only deployment. The reader tries `getenv()`, `$_ENV`, `$_SERVER`, then
+  the default, treating an empty string as unset (but not `"0"`). Adding a new
+  `CLICKHOUSE_*` param means calling `$env->read()`, not `getenv()`.
 - **`migrationsPath` throws when empty, by design.** The runner/generator
   closures call a resolver that raises a `RuntimeException` naming
   `CLICKHOUSE_MIGRATIONS_PATH` instead of shipping an empty-string default that

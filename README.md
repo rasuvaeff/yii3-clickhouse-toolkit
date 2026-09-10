@@ -76,6 +76,25 @@ Defaults come from environment variables. Override any of them by redefining the
 | `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — required for migrations* |
 | `migrationPlaceholders` | — | `[]` |
 
+### Where the values are read from
+
+Each variable is looked up in `getenv()` first, then in `$_ENV`, then in
+`$_SERVER`; the first non-empty one wins, and the default applies only when
+none has it.
+
+The fallback matters for `.env`-based deployments. `vlucas/phpdotenv`'s
+`Dotenv::createImmutable()` — the variant the library recommends — deliberately
+does not call `putenv()`: it writes to `$_ENV` and `$_SERVER` only. Reading
+through `getenv()` alone therefore sees nothing on a plain PHP-FPM or CLI
+deployment that relies on the `.env` file (a `php yii some:command` cron entry
+is the typical case), and the package would silently use its defaults —
+`127.0.0.1:8123`, database `default`, empty password — instead of reporting a
+configuration error. Under Docker Compose it happens to work, because
+`env_file:` puts the values into the container's process environment.
+
+An empty value counts as unset and falls through to the next source; `"0"` does
+not, so `CLICKHOUSE_SECURE=0` reads as configured.
+
 `migrationsPath` has **no safe default**: resolving the migration runner or
 generator without it throws a clear `RuntimeException` rather than silently
 operating relative to the working directory. Set the env var, or point the param

@@ -57,6 +57,11 @@ client + PSR-17 factories (e.g. guzzle).
 | secure | CLICKHOUSE_SECURE | false (1/true/on/yes → true) |
 | migrationsPath | CLICKHOUSE_MIGRATIONS_PATH | unset (required for migrations) |
 
+Lookup order per variable: getenv() -> $_ENV -> $_SERVER -> default; first
+non-empty wins. The superglobals are what Dotenv::createImmutable() populates
+(it never calls putenv()), so a .env-only deployment is read correctly. Empty
+counts as unset; "0" does not.
+
 Override in the app:
 
 ```php

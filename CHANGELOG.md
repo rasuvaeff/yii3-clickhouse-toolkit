@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.1.1 — 2026-09-10
+
+- Configuration is read from `getenv()`, then `$_ENV`, then `$_SERVER`, instead
+  of `getenv()` alone. A `.env` loaded with `Dotenv::createImmutable()` never
+  reaches `getenv()` — the library writes to the superglobals and deliberately
+  skips `putenv()` — so on a plain PHP-FPM or CLI deployment every setting
+  silently fell back to its default (`127.0.0.1:8123`, database `default`, empty
+  password) with nothing reporting that the configuration had been skipped.
+  Precedence is unchanged wherever `getenv()` already answered (#7).
+
 ## 1.1.0 — 2026-07-25
 
 - New `migrationPlaceholders` param, passed to `ClickHouseMigrationRunner` as

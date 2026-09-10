@@ -38,7 +38,7 @@ final readonly class ClickHouseConfigFactory
     private function toBool(mixed $value): bool
     {
         if (is_string($value)) {
-            return in_array(strtolower(trim($value)), self::TRUTHY_STRINGS, true);
+            return in_array(strtolower(trim($value)), self::TRUTHY_STRINGS, strict: true);
         }
 
         return (bool) $value;

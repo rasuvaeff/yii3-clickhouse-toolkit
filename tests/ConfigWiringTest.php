@@ -204,6 +204,34 @@ final class ConfigWiringTest
     }
 
     /**
+     * config/params.php is not covered by cs, psalm or the source-scanning part
+     * of the suite, so the only thing that catches a regression here is loading
+     * the real file. The value is placed where Dotenv::createImmutable() puts it
+     * and nowhere else: before the fix this read the default instead.
+     */
+    public function paramsReadValuesThatOnlyLiveInTheDotenvSuperglobals(): void
+    {
+        putenv('CLICKHOUSE_HOST');
+        putenv('CLICKHOUSE_MIGRATIONS_PATH');
+        $_ENV['CLICKHOUSE_HOST'] = 'ch.from-dotenv';
+        $_SERVER['CLICKHOUSE_MIGRATIONS_PATH'] = '/srv/app/migrations';
+
+        try {
+            /** @var array<string, array<string, mixed>> $params */
+            $params = require dirname(__DIR__) . '/config/params.php';
+            $config = $params['rasuvaeff/yii3-clickhouse-toolkit'];
+
+            Assert::same($config['host'], 'ch.from-dotenv');
+            Assert::same($config['migrationsPath'], '/srv/app/migrations');
+            // Untouched keys still resolve to their documented defaults.
+            Assert::same($config['port'], 8123);
+            Assert::same($config['database'], 'default');
+        } finally {
+            unset($_ENV['CLICKHOUSE_HOST'], $_SERVER['CLICKHOUSE_MIGRATIONS_PATH']);
+        }
+    }
+
+    /**
      * @param array<string, mixed> $chOverrides
      *
      * @return array<string, mixed>
