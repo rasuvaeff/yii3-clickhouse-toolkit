@@ -56,11 +56,18 @@ client + PSR-17 factories (e.g. guzzle).
 | password | CLICKHOUSE_PASSWORD | '' |
 | secure | CLICKHOUSE_SECURE | false (1/true/on/yes → true) |
 | migrationsPath | CLICKHOUSE_MIGRATIONS_PATH | unset (required for migrations) |
+| migrationsTable | CLICKHOUSE_MIGRATIONS_TABLE | _migrations |
 
 Lookup order per variable: getenv() -> $_ENV -> $_SERVER -> default; first
 non-empty wins. The superglobals are what Dotenv::createImmutable() populates
 (it never calls putenv()), so a .env-only deployment is read correctly. Empty
 counts as unset; "0" does not.
+
+migrationsTable renames the runner's bookkeeping table — needed to adopt the
+package where a `_migrations` of a different schema already exists, or to keep
+two applications on one database apart. Interpolated into SQL, so the toolkit
+validates it as a plain identifier (`db.table` refused); a non-string param
+falls back to the default.
 
 Override in the app:
 

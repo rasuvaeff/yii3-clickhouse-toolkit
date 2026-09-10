@@ -37,6 +37,15 @@ $migrationsPath = static function () use ($config): string {
     return $path;
 };
 
+$migrationsTable = static function () use ($config): string {
+    $table = $config['migrationsTable'] ?? '_migrations';
+
+    // Validation itself belongs to the runner (the name is interpolated into
+    // SQL, so it asserts a plain identifier); this only keeps a malformed param
+    // type from reaching a string argument.
+    return is_string($table) && $table !== '' ? $table : '_migrations';
+};
+
 $migrationPlaceholders = static function () use ($config): array {
     $placeholders = $config['migrationPlaceholders'] ?? [];
 
@@ -76,6 +85,7 @@ return [
         client: $client,
         migrationsPath: $migrationsPath(),
         placeholders: $migrationPlaceholders(),
+        migrationsTable: $migrationsTable(),
     ),
     ClickHouseMigrationRunnerInterface::class => ClickHouseMigrationRunner::class,
 
