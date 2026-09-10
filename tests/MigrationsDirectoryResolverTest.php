@@ -207,6 +207,35 @@ final class MigrationsDirectoryResolverTest
     }
 
     /**
+     * The exact shape of the bug fixed upstream in `yiisoft/db-migration` 2.1.0
+     * (our PR #350): Composer emits a core package's prefix before its `-db`
+     * sibling, and the core namespace is a plain string prefix of it. Matching
+     * on the raw string, then cutting with the untrimmed key length, resolved
+     * `…AbTestingDb\Migration` to `<core>/src/b/Migration` — note the stray
+     * `b/`. Discovery skipped the missing directory and `migrate:up` exited 0
+     * having created nothing.
+     *
+     * The mangled directory exists here on purpose: upstream the fault was long
+     * masked by an `is_dir()` fall-through, which resolves silently wrong the
+     * moment that fragment path happens to be real.
+     */
+    public function doesNotResolveIntoASiblingPackageTheWayDbMigrationDid(): void
+    {
+        $root = $this->tempDir();
+        mkdir($root . '/core/src/b/Migration', recursive: true);
+        mkdir($root . '/db/src/Migration', recursive: true);
+        $vendor = $this->vendorDir($root, [
+            'Rasuvaeff\\Yii3AbTesting\\' => [$root . '/core/src'],
+            'Rasuvaeff\\Yii3AbTestingDb\\' => [$root . '/db/src'],
+        ]);
+
+        Assert::same(
+            (new MigrationsDirectoryResolver($vendor))->resolve('Rasuvaeff\\Yii3AbTestingDb\\Migration'),
+            $root . '/db/src/Migration',
+        );
+    }
+
+    /**
      * `AppOther` starts with the characters of the `App\` prefix without being
      * inside it. Matching on the raw string would resolve it under a mapping the
      * application never made.
