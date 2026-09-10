@@ -20,9 +20,11 @@ use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsRunCommand;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsStatusCommand;
 use ReflectionProperty;
 use RuntimeException;
+use SimPod\ClickHouseClient\Client\ClickHouseClient;
 use SimPod\ClickHouseClient\Client\PsrClickHouseClient;
 use Testo\Assert;
 use Testo\Codecov\CoversNothing;
+use Testo\Data\DataProvider;
 use Testo\Test;
 use Yiisoft\Di\Container;
 use Yiisoft\Di\ContainerConfig;
@@ -49,7 +51,7 @@ final class ConfigWiringTest
 
     public function aliasesClickHouseClientToPsrImplementation(): void
     {
-        $client = $this->container()->get(\SimPod\ClickHouseClient\Client\ClickHouseClient::class);
+        $client = $this->container()->get(ClickHouseClient::class);
 
         Assert::instanceOf($client, PsrClickHouseClient::class);
     }
@@ -147,6 +149,63 @@ final class ConfigWiringTest
         );
     }
 
+    public function migrationsTableReachesTheRunner(): void
+    {
+        // The whole point of the param: adopting the package where a
+        // `_migrations` of a different schema already exists needs the runner
+        // pointed at a fresh name, and nothing else can do that.
+        $container = $this->container([
+            'migrationsPath' => __DIR__,
+            'migrationsTable' => 'app_schema_migrations',
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'migrationsTable'))->getValue($runner),
+            'app_schema_migrations',
+        );
+    }
+
+    public function migrationsTableDefaultsToUnderscoreMigrations(): void
+    {
+        $container = $this->container(['migrationsPath' => __DIR__]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'migrationsTable'))->getValue($runner),
+            '_migrations',
+        );
+    }
+
+    #[DataProvider('malformedMigrationsTableProvider')]
+    public function malformedMigrationsTableFallsBackToTheDefault(mixed $value): void
+    {
+        // params come from an application's config file; a non-string must not
+        // reach a string argument. A malformed *name* is still the runner's
+        // business — it asserts a plain identifier and throws.
+        $container = $this->container([
+            'migrationsPath' => __DIR__,
+            'migrationsTable' => $value,
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'migrationsTable'))->getValue($runner),
+            '_migrations',
+        );
+    }
+
+    public static function malformedMigrationsTableProvider(): iterable
+    {
+        yield 'empty string' => [''];
+        yield 'int' => [42];
+        yield 'array' => [['_migrations']];
+        yield 'null' => [null];
+    }
+
     public function bindsTableOperationHelpers(): void
     {
         // MutationBuilder and PartitionManager are client-only helpers, so the
@@ -213,6 +272,7 @@ final class ConfigWiringTest
     {
         putenv('CLICKHOUSE_HOST');
         putenv('CLICKHOUSE_MIGRATIONS_PATH');
+        putenv('CLICKHOUSE_MIGRATIONS_TABLE');
         $_ENV['CLICKHOUSE_HOST'] = 'ch.from-dotenv';
         $_SERVER['CLICKHOUSE_MIGRATIONS_PATH'] = '/srv/app/migrations';
 
@@ -226,6 +286,7 @@ final class ConfigWiringTest
             // Untouched keys still resolve to their documented defaults.
             Assert::same($config['port'], 8123);
             Assert::same($config['database'], 'default');
+            Assert::same($config['migrationsTable'], '_migrations');
         } finally {
             unset($_ENV['CLICKHOUSE_HOST'], $_SERVER['CLICKHOUSE_MIGRATIONS_PATH']);
         }

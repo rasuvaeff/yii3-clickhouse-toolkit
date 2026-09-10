@@ -74,6 +74,7 @@ Defaults come from environment variables. Override any of them by redefining the
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (accepts `1/true/on/yes`) |
 | `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — required for migrations* |
+| `migrationsTable` | `CLICKHOUSE_MIGRATIONS_TABLE` | `_migrations` |
 | `migrationPlaceholders` | — | `[]` |
 
 ### Where the values are read from
@@ -108,6 +109,29 @@ return [
     ],
 ];
 ```
+
+### Migration bookkeeping table
+
+`migrationsTable` names the table the runner records applied migrations in.
+Two situations need something other than `_migrations`:
+
+- **Adopting this package where `_migrations` already exists** with a different
+  schema — a home-grown `(name, applied_at)` table, say. The runner's
+  `CREATE TABLE IF NOT EXISTS` finds it and does nothing, then the first read
+  fails on the missing `checksum` column — *before* any migration file is read,
+  so the repair cannot itself ship as a migration. Point the runner at a fresh
+  name, let it re-apply the (idempotent) migrations, and drop the old table
+  whenever convenient.
+- **Two applications sharing one ClickHouse database** — give each its own.
+
+```dotenv
+CLICKHOUSE_MIGRATIONS_TABLE=app_schema_migrations
+```
+
+The name is interpolated into SQL rather than bound, so `clickhouse-toolkit`
+validates it as a plain identifier and throws otherwise; a db-qualified
+`analytics._migrations` is refused too. A non-string param falls back to the
+default rather than reaching a string argument.
 
 ### Migration placeholders
 

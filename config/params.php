@@ -28,6 +28,11 @@ return [
         'password' => $env->read('CLICKHOUSE_PASSWORD'),
         'secure' => filter_var($env->read('CLICKHOUSE_SECURE', 'false'), FILTER_VALIDATE_BOOLEAN),
         'migrationsPath' => $env->read('CLICKHOUSE_MIGRATIONS_PATH'),
+        // Bookkeeping table the runner records applied migrations in. A name
+        // other than the default is what lets the package be adopted alongside
+        // an existing `_migrations` of a different schema, and what keeps two
+        // applications on one ClickHouse database apart.
+        'migrationsTable' => $env->read('CLICKHOUSE_MIGRATIONS_TABLE', '_migrations'),
         // `{{key}}` tokens replaced in every migration file before it is hashed
         // and executed — how a package's shipped DDL learns the table name the
         // application configured

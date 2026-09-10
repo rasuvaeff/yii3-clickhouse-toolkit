@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.0 — 2026-09-10
+
+- New `migrationsTable` param (`CLICKHOUSE_MIGRATIONS_TABLE`, default
+  `_migrations`), passed to `ClickHouseMigrationRunner`. Without it the runner's
+  new `$migrationsTable` argument was unreachable for applications wiring
+  through this bridge — and with it, adopting the package on top of an existing
+  `_migrations` of a different schema no longer requires dropping or altering
+  that table by hand on every environment. Requires
+  `rasuvaeff/clickhouse-toolkit: ^1.7` (#8).
+
 ## 1.1.1 — 2026-09-10
 
 - Configuration is read from `getenv()`, then `$_ENV`, then `$_SERVER`, instead

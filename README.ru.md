@@ -75,6 +75,7 @@ composer require rasuvaeff/yii3-clickhouse-toolkit
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (принимает `1/true/on/yes`) |
 | `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — требуется для миграций* |
+| `migrationsTable` | `CLICKHOUSE_MIGRATIONS_TABLE` | `_migrations` |
 | `migrationPlaceholders` | — | `[]` |
 
 ### Откуда читаются значения
@@ -109,6 +110,29 @@ return [
     ],
 ];
 ```
+
+### Служебная таблица миграций
+
+`migrationsTable` задаёт таблицу, в которой раннер записывает применённые
+миграции. Имя, отличное от `_migrations`, нужно в двух случаях:
+
+- **Переход на этот пакет там, где `_migrations` уже существует** с другой
+  схемой — например, самописная `(name, applied_at)`. `CREATE TABLE IF NOT
+  EXISTS` раннера находит её и ничего не делает, а первое же чтение падает на
+  отсутствующей колонке `checksum` — *до* чтения любого файла миграции, поэтому
+  починку нельзя поставить самой миграцией. Направьте раннер на свежее имя,
+  дайте ему заново применить (идемпотентные) миграции, а старую таблицу удалите
+  когда удобно.
+- **Два приложения на одной базе ClickHouse** — каждому своя.
+
+```dotenv
+CLICKHOUSE_MIGRATIONS_TABLE=app_schema_migrations
+```
+
+Имя подставляется в SQL, а не биндится, поэтому `clickhouse-toolkit` проверяет
+его как простой идентификатор и иначе бросает исключение; форма с базой,
+`analytics._migrations`, тоже отвергается. Параметр не-строка откатывается к
+умолчанию, а не попадает в строковый аргумент.
 
 ### Плейсхолдеры миграций
 
