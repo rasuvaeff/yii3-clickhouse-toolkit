@@ -23,7 +23,10 @@ client + PSR-17 factories (e.g. guzzle).
   `ClickHouseClientFactory`, `PsrClickHouseClient` and the migration services.
   Backend packages (e.g. `yii3-outbox-clickhouse`) consume the factory, never bind it.
 - `migrationsPath` has NO default. Resolving the migration runner/generator
-  without it throws `RuntimeException`. Set `CLICKHOUSE_MIGRATIONS_PATH` or the param.
+  without it throws `RuntimeException`. Set `CLICKHOUSE_MIGRATIONS_PATH` or the param,
+  or set `migrationsNamespace` and let Composer's PSR-4 map answer.
+- `migrationsPath` (non-empty) wins over `migrationsNamespace`. An unresolvable
+  namespace throws naming the namespace AND every path checked.
 - Query/identifier safety belongs to `rasuvaeff/clickhouse-toolkit`, not here.
 - All actual ClickHouse behaviour is documented in the toolkit's own `llms.txt`.
 
@@ -57,11 +60,21 @@ client + PSR-17 factories (e.g. guzzle).
 | secure | CLICKHOUSE_SECURE | false (1/true/on/yes → true) |
 | migrationsPath | CLICKHOUSE_MIGRATIONS_PATH | unset (required for migrations) |
 | migrationsTable | CLICKHOUSE_MIGRATIONS_TABLE | _migrations |
+| migrationsNamespace | — (params only, by design) | unset |
 
 Lookup order per variable: getenv() -> $_ENV -> $_SERVER -> default; first
 non-empty wins. The superglobals are what Dotenv::createImmutable() populates
 (it never calls putenv()), so a .env-only deployment is read correctly. Empty
 counts as unset; "0" does not.
+
+migrationsNamespace resolves the migrations directory through
+vendor/composer/autoload_psr4.php (as yiisoft/db-migration does): a namespace is
+identical on every stand and does not move with the config file, unlike a path.
+The namespace is fictitious (no classes in *.sql) but sits in the app's PSR-4
+tree. Longest matching prefix wins; a shorter one is tried only if the longer
+maps to nothing on disk. Params-only on purpose — an env var would put the
+directory back into per-stand configuration. Both the runner and the generator
+take the resolved path from the same DI closure.
 
 migrationsTable renames the runner's bookkeeping table — needed to adopt the
 package where a `_migrations` of a different schema already exists, or to keep
@@ -75,6 +88,8 @@ Override in the app:
 return [
     'rasuvaeff/yii3-clickhouse-toolkit' => [
         'migrationsPath' => dirname(__DIR__, 2) . '/resources/clickhouse-migrations',
+        // or, instead of a path:
+        // 'migrationsNamespace' => 'App\\Infrastructure\\ClickHouse\\Migration',
     ],
 ];
 ```

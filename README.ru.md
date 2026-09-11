@@ -74,7 +74,8 @@ composer require rasuvaeff/yii3-clickhouse-toolkit
 | `username` | `CLICKHOUSE_USER` | `default` |
 | `password` | `CLICKHOUSE_PASSWORD` | `''` |
 | `secure` | `CLICKHOUSE_SECURE` | `false` (принимает `1/true/on/yes`) |
-| `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — требуется для миграций* |
+| `migrationsPath` | `CLICKHOUSE_MIGRATIONS_PATH` | *unset — требуется для миграций, если не задан `migrationsNamespace`* |
+| `migrationsNamespace` | — | *unset — PSR-4 namespace, резолвится в каталог миграций* |
 | `migrationsTable` | `CLICKHOUSE_MIGRATIONS_TABLE` | `_migrations` |
 | `migrationPlaceholders` | — | `[]` |
 
@@ -110,6 +111,42 @@ return [
     ],
 ];
 ```
+
+### Поиск миграций по namespace
+
+`migrationsNamespace` — альтернатива явному пути. Он резолвится через
+PSR-4-карту композера (`vendor/composer/autoload_psr4.php`) — так же, как
+`yiisoft/db-migration` резолвит свои namespace'ы миграций:
+
+```php
+// config/common/params.php
+return [
+    'rasuvaeff/yii3-clickhouse-toolkit' => [
+        'migrationsNamespace' => 'App\\Infrastructure\\ClickHouse\\Migration',
+    ],
+];
+```
+
+С точки зрения PHP namespace фиктивный — классов в `*.sql` нет, — но каталог
+лежит внутри PSR-4-дерева приложения, поэтому карта композера и есть верный
+источник. Два преимущества перед путём:
+
+- namespace — свойство кода, одинаковое на всех окружениях, а не строка в `.env`
+  каждого стенда, которую ни один локальный запуск не проверит;
+- он не съезжает при переносе файла конфигурации, в отличие от
+  `dirname(__DIR__, 2)`.
+
+| Правило | Детали |
+|---|---|
+| Приоритет | Явный непустой `migrationsPath` перекрывает namespace. Приложения, уже настроенные так, не затронуты, а каталог миграций вне PSR-4-дерева остаётся доступным. |
+| Не задано ничего | Без изменений: `RuntimeException`, называющее оба способа. |
+| Namespace не резолвится | `RuntimeException` с namespace **и каждым проверенным путём** — ровно та диагностика, которой нет у варианта с путём. |
+| Побеждает длиннейший префикс | Вложенный префикс (`App\Billing\`) может указывать не туда, куда родительский; namespace принадлежит длиннейшему совпадению, к более короткому переходим, только если длинный не указывает ни на один существующий каталог. |
+| Переименованный vendor | Карта ищется как `vendor/composer/autoload_psr4.php` выше этого пакета. Приложение, переименовавшее каталог vendor, настраивает `migrationsPath`. |
+
+Оба потребителя — `ClickHouseMigrationRunner` и `ClickHouseMigrationGenerator` —
+строят путь из одного и того же DI-замыкания, поэтому namespace резолвится в
+одном месте и доходит до обоих.
 
 ### Служебная таблица миграций
 

@@ -14,6 +14,7 @@ use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder;
 use Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager;
 use Rasuvaeff\Yii3ClickHouseToolkit\ClickHouseConfigFactory;
+use Rasuvaeff\Yii3ClickHouseToolkit\MigrationsDirectoryResolver;
 use SimPod\ClickHouseClient\Client\ClickHouseClient;
 use SimPod\ClickHouseClient\Client\PsrClickHouseClient;
 use Yiisoft\Definitions\Reference;
@@ -26,15 +27,25 @@ $config = is_array($config) ? $config : [];
 $migrationsPath = static function () use ($config): string {
     $path = $config['migrationsPath'] ?? '';
 
-    if (!is_string($path) || $path === '') {
-        throw new RuntimeException(
-            'ClickHouse migrations path is not configured. Set the CLICKHOUSE_MIGRATIONS_PATH '
-            . 'environment variable, or override the '
-            . '"rasuvaeff/yii3-clickhouse-toolkit" => "migrationsPath" parameter.',
-        );
+    // An explicit path wins: applications already configured this way keep
+    // working unchanged, and it stays the escape hatch for a migrations
+    // directory that lives outside the PSR-4 tree.
+    if (is_string($path) && $path !== '') {
+        return $path;
     }
 
-    return $path;
+    $namespace = $config['migrationsNamespace'] ?? '';
+
+    if (is_string($namespace) && $namespace !== '') {
+        return (new MigrationsDirectoryResolver())->resolve($namespace);
+    }
+
+    throw new RuntimeException(
+        'ClickHouse migrations path is not configured. Set the CLICKHOUSE_MIGRATIONS_PATH '
+        . 'environment variable, or override the '
+        . '"rasuvaeff/yii3-clickhouse-toolkit" => "migrationsPath" parameter, or point '
+        . '"migrationsNamespace" at the PSR-4 namespace of the migrations directory.',
+    );
 };
 
 $migrationsTable = static function () use ($config): string {

@@ -96,11 +96,77 @@ final class ConfigWiringTest
             $generator();
         } catch (RuntimeException $e) {
             Assert::string($e->getMessage())->contains('CLICKHOUSE_MIGRATIONS_PATH');
+            // Both ways out are named: the message is the only place an operator
+            // learns the namespace parameter exists.
+            Assert::string($e->getMessage())->contains('migrationsNamespace');
 
             return;
         }
 
         Assert::fail('Expected a RuntimeException when migrationsPath is empty');
+    }
+
+    /**
+     * The point of the parameter: both consumers build their path from the same
+     * DI closure, so resolving the namespace once has to reach the runner and
+     * the generator alike. A unit test of the resolver cannot show that.
+     */
+    public function migrationsNamespaceResolvesThePathForBothConsumers(): void
+    {
+        $container = $this->container([
+            'migrationsPath' => '',
+            'migrationsNamespace' => 'Rasuvaeff\\Yii3ClickHouseToolkit\\Tests',
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+        $generator = $container->get(ClickHouseMigrationGenerator::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'migrationsPath'))->getValue($runner),
+            __DIR__,
+        );
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationGenerator::class, 'migrationsPath'))->getValue($generator),
+            __DIR__,
+        );
+    }
+
+    /**
+     * Applications already configured with a path keep working unchanged, and a
+     * migrations directory outside the PSR-4 tree stays reachable.
+     */
+    public function explicitMigrationsPathWinsOverTheNamespace(): void
+    {
+        $container = $this->container([
+            'migrationsPath' => '/tmp/clickhouse-migrations',
+            'migrationsNamespace' => 'Rasuvaeff\\Yii3ClickHouseToolkit\\Tests',
+        ]);
+
+        $runner = $container->get(ClickHouseMigrationRunner::class);
+
+        Assert::same(
+            (new ReflectionProperty(ClickHouseMigrationRunner::class, 'migrationsPath'))->getValue($runner),
+            '/tmp/clickhouse-migrations',
+        );
+    }
+
+    public function unresolvableMigrationsNamespaceReportsTheNamespace(): void
+    {
+        /** @var Closure(): ClickHouseMigrationGenerator $generator */
+        $generator = $this->definitions([
+            'migrationsPath' => '',
+            'migrationsNamespace' => 'No\\Such\\Namespace',
+        ])[ClickHouseMigrationGenerator::class];
+
+        try {
+            $generator();
+        } catch (RuntimeException $e) {
+            Assert::string($e->getMessage())->contains('No\\Such\\Namespace');
+
+            return;
+        }
+
+        Assert::fail('Expected a RuntimeException when migrationsNamespace resolves to nothing');
     }
 
     public function resolvesMigrationServicesWhenPathIsSet(): void
@@ -287,6 +353,9 @@ final class ConfigWiringTest
             Assert::same($config['port'], 8123);
             Assert::same($config['database'], 'default');
             Assert::same($config['migrationsTable'], '_migrations');
+            // Namespace resolution is opt-in: empty by default, so the path
+            // stays the only source until an application sets it.
+            Assert::same($config['migrationsNamespace'], '');
         } finally {
             unset($_ENV['CLICKHOUSE_HOST'], $_SERVER['CLICKHOUSE_MIGRATIONS_PATH']);
         }
