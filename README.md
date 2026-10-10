@@ -23,7 +23,8 @@ in a Yii3 application.
 ## Requirements
 
 - PHP 8.3–8.5
-- [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.2` (pulled in automatically; migration commands need ≥ 1.2.0)
+- [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.10` (pulled in automatically)
+- [`rasuvaeff/context`](https://github.com/rasuvaeff/context) `^0.1` (pulled in automatically)
 - A Yii3 application using [`yiisoft/config`](https://github.com/yiisoft/config)
   with the standard `RecursiveMerge::groups('params', …)` setup (the app template default)
 - A PSR-18 HTTP client + PSR-17 factories (e.g. `guzzlehttp/guzzle`)
@@ -45,7 +46,9 @@ Once installed, the following container entries resolve from the merged config:
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseConfig` | `ClickHouseConfig` | built from the params below |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseClientFactory` | `ClickHouseClientFactory` | picks up an app-bound PSR-18 client / PSR-17 factories if present |
 | `SimPod\ClickHouseClient\Client\PsrClickHouseClient` | live client | via `ClickHouseClientFactory::create()` |
-| `SimPod\ClickHouseClient\Client\ClickHouseClient` | alias → `PsrClickHouseClient` | type-hint the interface |
+| `Rasuvaeff\ClickHouseToolkit\ContextClickHouseClient` | context-aware decorator | checks cancellation/deadlines and maps remaining time to `max_execution_time` |
+| `Rasuvaeff\Context\Context` | background context by default | replace this binding with the current request/job context |
+| `SimPod\ClickHouseClient\Client\ClickHouseClient` | alias → `ContextClickHouseClient` | type-hint the interface |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner` | migration runner | needs `migrationsPath` (see below) |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface` | alias → runner | |
 | `Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator` | migration generator | needs `migrationsPath` |
@@ -209,6 +212,21 @@ final readonly class ReportService
     }
 }
 ```
+
+The bridge wraps the live client in `ContextClickHouseClient`. It uses a
+background context by default, preserving the behaviour of existing installs.
+Keppio or another Yii3 application can bind its current request/job context:
+
+```php
+use Rasuvaeff\Context\Context;
+
+return [
+    Context::class => static fn (): Context => $currentContext,
+];
+```
+
+The context is checked before and after every ClickHouse operation. When it has
+a deadline, the remaining budget is sent to ClickHouse as `max_execution_time`.
 
 Run migrations from the Yii3 console:
 
