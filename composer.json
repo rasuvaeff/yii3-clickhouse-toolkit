@@ -27,7 +27,8 @@
         "php": "8.3 - 8.5",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
-        "rasuvaeff/clickhouse-toolkit": "^1.7",
+        "rasuvaeff/clickhouse-toolkit": "^1.10",
+        "rasuvaeff/context": "^0.1",
         "simpod/clickhouse-client": "^0.8.3",
         "yiisoft/definitions": "^3.0"
     },

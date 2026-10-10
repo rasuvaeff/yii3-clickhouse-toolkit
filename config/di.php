@@ -8,6 +8,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseClientFactory;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseConfig;
+use Rasuvaeff\ClickHouseToolkit\ContextClickHouseClient;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationGenerator;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunner;
 use Rasuvaeff\ClickHouseToolkit\ClickHouseMigrationRunnerInterface;
@@ -15,6 +16,7 @@ use Rasuvaeff\ClickHouseToolkit\ClickHouseMutationBuilder;
 use Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager;
 use Rasuvaeff\Yii3ClickHouseToolkit\ClickHouseConfigFactory;
 use Rasuvaeff\Yii3ClickHouseToolkit\MigrationsDirectoryResolver;
+use Rasuvaeff\Context\Context;
 use SimPod\ClickHouseClient\Client\ClickHouseClient;
 use SimPod\ClickHouseClient\Client\PsrClickHouseClient;
 use Yiisoft\Definitions\Reference;
@@ -90,7 +92,15 @@ return [
     ],
 
     PsrClickHouseClient::class => static fn (ClickHouseClientFactory $factory): PsrClickHouseClient => $factory->create(),
-    ClickHouseClient::class => PsrClickHouseClient::class,
+    // Applications can replace this default with a request/job context in
+    // their own DI config; the background context keeps existing installs
+    // working when no execution budget is supplied.
+    Context::class => static fn (): Context => Context::background(),
+    ContextClickHouseClient::class => static fn (PsrClickHouseClient $client, Context $context): ContextClickHouseClient => new ContextClickHouseClient(
+        client: $client,
+        context: $context,
+    ),
+    ClickHouseClient::class => ContextClickHouseClient::class,
 
     ClickHouseMigrationRunner::class => static fn (ClickHouseClient $client): ClickHouseMigrationRunner => new ClickHouseMigrationRunner(
         client: $client,
