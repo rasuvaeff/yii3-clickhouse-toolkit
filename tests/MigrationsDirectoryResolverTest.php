@@ -276,7 +276,7 @@ final class MigrationsDirectoryResolverTest
         mkdir($vendor . '/composer', recursive: true);
         file_put_contents(
             $vendor . '/composer/autoload_psr4.php',
-            "<?php\n\nreturn " . var_export($map, true) . ";\n",
+            "<?php\n\nreturn " . var_export($map, return: true) . ";\n",
         );
 
         return $vendor;

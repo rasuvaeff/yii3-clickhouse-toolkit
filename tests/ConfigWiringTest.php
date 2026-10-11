@@ -18,6 +18,8 @@ use Rasuvaeff\ClickHouseToolkit\ClickHousePartitionManager;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsGenerateCommand;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsRunCommand;
 use Rasuvaeff\ClickHouseToolkit\Command\ClickHouseMigrationsStatusCommand;
+use Rasuvaeff\ClickHouseToolkit\ContextClickHouseClient;
+use Rasuvaeff\Context\Context;
 use ReflectionProperty;
 use RuntimeException;
 use SimPod\ClickHouseClient\Client\ClickHouseClient;
@@ -49,11 +51,25 @@ final class ConfigWiringTest
         Assert::true($config->secure);
     }
 
-    public function aliasesClickHouseClientToPsrImplementation(): void
+    public function wrapsClickHouseClientWithContextAwareImplementation(): void
     {
         $client = $this->container()->get(ClickHouseClient::class);
 
-        Assert::instanceOf($client, PsrClickHouseClient::class);
+        Assert::instanceOf($client, ContextClickHouseClient::class);
+        Assert::instanceOf($this->container()->get(Context::class), Context::class);
+        Assert::instanceOf($this->container()->get(PsrClickHouseClient::class), PsrClickHouseClient::class);
+    }
+
+    public function applicationContextCanBeInjectedIntoTheWrapper(): void
+    {
+        $context = Context::background()->withTimeout(10.0)[0];
+        $client = $this->container([], [Context::class => $context])->get(ClickHouseClient::class);
+
+        Assert::instanceOf($client, ContextClickHouseClient::class);
+        Assert::same(
+            (new ReflectionProperty(ContextClickHouseClient::class, 'context'))->getValue($client),
+            $context,
+        );
     }
 
     public function fallsBackToDiscoveredPsr18ClientWhenAppBindsNone(): void
@@ -323,7 +339,7 @@ final class ConfigWiringTest
      */
     private function container(array $chOverrides = [], array $extra = []): Container
     {
-        $definitions = $this->definitions($chOverrides) + $extra;
+        $definitions = $extra + $this->definitions($chOverrides);
 
         return new Container(ContainerConfig::create()->withDefinitions($definitions));
     }
