@@ -185,6 +185,30 @@ final class MigrationsDirectoryResolverTest
         Assert::same($resolved, dirname(__DIR__) . '/tests');
     }
 
+    public function throwsWhenNoComposerMapExistsAboveTheSearchStart(): void
+    {
+        $start = $this->tempDir() . '/a/b';
+        mkdir($start, recursive: true);
+
+        Expect::exception(RuntimeException::class)->withMessage(
+            'Composer PSR-4 map (vendor/composer/autoload_psr4.php) was not found above "' . $start . '". '
+            . 'Pass the vendor directory explicitly, or configure "migrationsPath" instead.',
+        );
+
+        (new MigrationsDirectoryResolver(searchFrom: $start))->resolve('App\\Migration');
+    }
+
+    public function findsTheMapByWalkingUpFromTheSearchStart(): void
+    {
+        $root = $this->tempDir();
+        mkdir($root . '/src', recursive: true);
+        $this->vendorDir($root, ['App\\' => [$root . '/src']]);
+        $start = $root . '/nested/deeper';
+        mkdir($start, recursive: true);
+
+        Assert::same((new MigrationsDirectoryResolver(searchFrom: $start))->resolve('App'), $root . '/src');
+    }
+
     /**
      * The longest prefix owns the namespace, but only if it actually holds the
      * directory: Composer maps a namespace, not a guarantee that every

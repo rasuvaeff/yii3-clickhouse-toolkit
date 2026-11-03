@@ -27,8 +27,14 @@ final readonly class MigrationsDirectoryResolver
      * @param string|null $vendorDir Composer's vendor directory. Located from this
      *                               file's position when null, which covers both an
      *                               installed application and the package checkout.
+     * @param string|null $searchFrom Directory the upward search for the map starts
+     *                                from when $vendorDir is null. This file's own
+     *                                directory when null.
      */
-    public function __construct(private ?string $vendorDir = null) {}
+    public function __construct(
+        private ?string $vendorDir = null,
+        private ?string $searchFrom = null,
+    ) {}
 
     /**
      * @throws \RuntimeException when the namespace is empty, no PSR-4 prefix covers
@@ -125,7 +131,8 @@ final readonly class MigrationsDirectoryResolver
         // caller having to know which one it is. An application that renamed
         // Composer's vendor directory falls outside this and configures
         // "migrationsPath" instead.
-        $directory = __DIR__;
+        $start = $this->searchFrom ?? __DIR__;
+        $directory = $start;
 
         while (true) {
             $candidate = $directory . '/vendor/composer/autoload_psr4.php';
@@ -138,7 +145,7 @@ final readonly class MigrationsDirectoryResolver
 
             if ($parent === $directory) {
                 throw new \RuntimeException(
-                    'Composer PSR-4 map (vendor/composer/autoload_psr4.php) was not found above "' . __DIR__ . '". '
+                    'Composer PSR-4 map (vendor/composer/autoload_psr4.php) was not found above "' . $start . '". '
                     . 'Pass the vendor directory explicitly, or configure "migrationsPath" instead.',
                 );
             }
