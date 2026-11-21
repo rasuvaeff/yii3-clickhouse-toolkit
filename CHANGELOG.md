@@ -5,8 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 1.4.3 — 2026-11-21
 
+- Allow `rasuvaeff/context` ^0.4 and ^0.5.
 - Mutation testing now counts code the tests do not name in `#[Covers]` (`infection --with-uncovered`), with the signature-default and visibility mutators configured as in the package template.
 - `MigrationsDirectoryResolver` (`@internal`) takes an optional second constructor argument `$searchFrom`, the directory the upward search for Composer's PSR-4 map starts from. Default is the file's own directory, so behaviour is unchanged; the "map not found" branch is now reachable from a test.
 
