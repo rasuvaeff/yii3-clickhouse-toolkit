@@ -22,7 +22,7 @@ in a Yii3 application.
 
 ## Requirements
 
-- PHP 8.3–8.5
+- PHP 8.3–8.6
 - [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.10` (pulled in automatically)
 - [`rasuvaeff/context`](https://github.com/rasuvaeff/context) `^0.1` to `^0.5` (pulled in automatically)
 - A Yii3 application using [`yiisoft/config`](https://github.com/yiisoft/config)

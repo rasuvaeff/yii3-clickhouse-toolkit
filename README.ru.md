@@ -23,7 +23,7 @@ Yii3-приложении.
 
 ## Требования
 
-- PHP 8.3–8.5
+- PHP 8.3–8.6
 - [`rasuvaeff/clickhouse-toolkit`](https://github.com/rasuvaeff/clickhouse-toolkit) `^1.10` (подтягивается автоматически)
 - [`rasuvaeff/context`](https://github.com/rasuvaeff/context) `^0.1` – `^0.5` (подтягивается автоматически)
 - Yii3-приложение, использующее [`yiisoft/config`](https://github.com/yiisoft/config)
